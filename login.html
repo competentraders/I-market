@@ -19,126 +19,68 @@
         <h1 class="text-3xl font-extrabold text-red-600 text-center mb-2">I-Market</h1>
         <h2 class="text-xl font-semibold text-gray-800 text-center mb-6">Sign In</h2>
 
-        <!-- Notification/Error Message Area -->
+        <!-- Notification Area -->
         <div id="auth-status" class="hidden p-3 mb-4 rounded-lg text-center font-medium"></div>
 
         <!-- Login Form -->
         <form id="login-form" class="space-y-6">
             <div>
-                <label for="login-email" class="block text-sm font-medium text-gray-700">Email Address</label>
-                <input type="email" id="login-email" required placeholder="name@example.com" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-3 focus:ring-red-500 focus:border-red-500 border">
+                <label class="block text-sm font-medium text-gray-700">Email Address</label>
+                <input type="email" id="login-email" required placeholder="name@example.com"
+                class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-3 border">
             </div>
             <div>
-                <label for="login-password" class="block text-sm font-medium text-gray-700">Password</label>
-                <input type="password" id="login-password" required placeholder="Enter your password" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-3 focus:ring-red-500 focus:border-red-500 border">
+                <label class="block text-sm font-medium text-gray-700">Password</label>
+                <input type="password" id="login-password" required placeholder="Enter your password"
+                class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-3 border">
             </div>
-            <button type="submit" class="w-full bg-red-600 text-white py-3 rounded-lg font-bold hover:bg-red-700 transition duration-300 shadow-lg">
+            <button type="submit"
+            class="w-full bg-red-600 text-white py-3 rounded-lg font-bold hover:bg-red-700 transition duration-300 shadow-lg">
                 Sign In to Marketplace
             </button>
         </form>
-        
+
         <p class="mt-6 text-center text-sm text-gray-600">
-            Don't have an account? 
+            Don't have an account?
             <a href="register.html" class="font-medium text-red-600 hover:text-red-700 transition">Register here</a>
         </p>
     </div>
 
-    <!-- Firebase Authentication Script -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, setPersistence, browserLocalPersistence, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <!-- PURE FRONTEND REDIRECT ONLY -->
+    <script>
+        const loginForm = document.getElementById("login-form");
+        const authStatus = document.getElementById("auth-status");
 
-        // --- CONFIGURATION & GLOBAL STATE ---
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        
-        let auth;
-        let isFirebaseReady = false;
+        function showStatus(msg, isError = false) {
+            authStatus.textContent = msg;
+            authStatus.classList.remove("hidden");
+            authStatus.className =
+                "p-3 mb-4 rounded-lg text-center font-medium " +
+                (isError ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700");
 
-        // --- DOM Elements ---
-        const authStatus = document.getElementById('auth-status');
-        const loginForm = document.getElementById('login-form');
-        // CORRECTED REDIRECT PAGE NAME
-        const REDIRECT_PAGE = 'productmarket.html';
-
-        // --- UTILITY FUNCTIONS ---
-
-        function setStatus(message, isError = false) {
-            authStatus.textContent = message;
-            authStatus.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700');
-            authStatus.classList.add(isError ? 'bg-red-100' : 'bg-green-100');
-            authStatus.classList.add(isError ? 'text-red-700' : 'text-green-700');
             if (!isError) {
-                setTimeout(() => authStatus.classList.add('hidden'), 3000);
-            }
-        }
-        
-        // --- AUTH LOGIC ---
-
-        async function initializeFirebase() {
-            try {
-                const app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                await setPersistence(auth, browserLocalPersistence);
-                setLogLevel('debug'); 
-                isFirebaseReady = true;
-                
-                // Check if the user is already authenticated
-                onAuthStateChanged(auth, (user) => {
-                    if (user && !user.isAnonymous) {
-                         setStatus("Welcome back! Redirecting...", false);
-                         // Redirect if user is already logged in
-                         window.location.href = REDIRECT_PAGE;
-                    }
-                });
-
-            } catch (error) {
-                console.error("Firebase initialization failed:", error);
-                setStatus("Critical Error: Failed to connect to authentication service.", true);
+                setTimeout(() => authStatus.classList.add("hidden"), 2500);
             }
         }
 
-        async function handleLogin(e) {
+        loginForm.addEventListener("submit", function (e) {
             e.preventDefault();
-            if (!isFirebaseReady) {
-                setStatus("System initializing, please wait.", true);
+
+            const email = document.getElementById("login-email").value.trim();
+            const password = document.getElementById("login-password").value.trim();
+
+            if (email === "" || password === "") {
+                showStatus("Please fill in all fields.", true);
                 return;
             }
 
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-            const btn = loginForm.querySelector('button');
-
-            btn.disabled = true;
-            setStatus("Signing in...", false);
-
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-                
-                // --- MANDATORY REDIRECTION POINT ---
-                setStatus("Login successful! Redirecting to marketplace...", false);
-                window.location.href = REDIRECT_PAGE;
-                
-            } catch (error) {
-                console.error("Login failed:", error);
-                let errorMessage = "Login failed. Please check your credentials.";
-                if (error.code === 'auth/invalid-email' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
-                    errorMessage = 'Invalid email or password.';
-                } else if (error.code === 'auth/user-disabled') {
-                    errorMessage = 'This account has been disabled.';
-                }
-                
-                setStatus(errorMessage, true);
-                btn.disabled = false;
-            }
-        }
-
-        // --- Event Listeners and Initialization ---
-
-        loginForm.addEventListener('submit', handleLogin);
-        initializeFirebase();
-        
+            // LOGIN SUCCESS — FRONTEND ONLY
+            showStatus("Login successful! Redirecting...");
+            setTimeout(() => {
+                window.location.href = "productmarket.html";
+            }, 1200);
+        });
     </script>
+
 </body>
 </html>
-
